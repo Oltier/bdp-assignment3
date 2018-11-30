@@ -78,3 +78,4 @@ fabric.properties
 *.log
 
 .idea
+/src/main/resources/osge_pool-1-thread-1.data
