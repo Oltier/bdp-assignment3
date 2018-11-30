@@ -37,13 +37,14 @@ class GamingProcessor() {
 
 
   // these parameters can be changed
-  val spark = SparkSession.builder
+  val spark: SparkSession = SparkSession.builder
     .master("local")
     .appName("gaming")
     .config("spark.driver.memory", "5g")
     .config("spark.executor.memory", "2g")
     .getOrCreate()
 
+  val games = "games"
 
   /**
     * convert creates a dataframe, removes unnecessary colums and converts the rest to right format.
@@ -52,18 +53,56 @@ class GamingProcessor() {
     *   - age: Double
     *   - country: String
     *   - friend_count: Double
-    *   - lifetime: Double
-    *   - game1: Double (citygame_played)
-    *   - game2: Double (pictionarygame_played)
-    *   - game3: Double (scramblegame_played)
-    *   - game4: Double (snipergame_played)
-    *   - paid_customer: Double (1 if yes else 0)
+    *   - lifetime: Double !!
+    *   - game1: Double (citygame_played) !!
+    *   - game2: Double (pictionarygame_played) !!
+    *   - game3: Double (scramblegame_played) !!
+    *   - game4: Double (snipergame_played) !!
+    *   - paid_customer: Double (1 if yes else 0) !!
     *
     * @param path to file
     * @return converted DataFrame
     */
   def convert(path: String): DataFrame = {
-    ???
+    val gamesTableInitial: DataFrame = spark.read
+      .option("header", "false")
+      .option("inferSchema", "true")
+      .csv(path)
+      .toDF("cid", "cname", "email", "gender", "age", "address", "country",
+        "register_date", "friend_count", "lifetime", "game1", "game2",
+        "game3", "game4", "revenue", "paid_customer")
+
+    val gamesTableAfterDrop = gamesTableInitial
+      .drop("cid").drop("cname").drop("address").drop("register_date")
+      .drop("revenue")
+
+    val gamesTable = gamesTableAfterDrop
+      .selectExpr(
+        """cast(
+          |case
+          | when gender='male' then 1
+          | else 0
+          |END
+          |as double) gender""".stripMargin,
+        "cast(age as double) age",
+        "country",
+        "cast(friend_count as double) friend_count",
+        "cast(lifetime as double) lifetime",
+        "cast(game1 as double) game1",
+        "cast(game2 as double) game2",
+        "cast(game3 as double) game3",
+        "cast(game4 as double) game4",
+        """cast(
+          |case
+          | when paid_customer='yes' then 1
+          | else 0
+          |end
+          |as double) paid_customer""".stripMargin
+      )
+
+    gamesTable.createOrReplaceTempView(games)
+//    gamesTable.printSchema()
+    gamesTable
   }
 
   /**
