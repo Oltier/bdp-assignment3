@@ -1,6 +1,7 @@
 package questions
 
 import org.apache.spark.ml.classification.LogisticRegressionModel
+import org.apache.spark.ml.feature.StringIndexer
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
@@ -127,7 +128,11 @@ class GamingProcessor() {
     * @return Dataframe
     */
   def indexer(df: DataFrame): DataFrame = {
-    ???
+    val indexer = new StringIndexer()
+      .setInputCol("country")
+      .setOutputCol("country_index")
+
+    indexer.fit(df).transform(df)
   }
 
   /**
