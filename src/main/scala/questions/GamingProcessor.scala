@@ -1,8 +1,7 @@
 package questions
 
-import org.apache.spark.ml.classification.LogisticRegressionModel
+import org.apache.spark.ml.classification.{LogisticRegression, LogisticRegressionModel}
 import org.apache.spark.ml.feature.{StandardScaler, StringIndexer, VectorAssembler}
-import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
@@ -48,7 +47,6 @@ class GamingProcessor() {
 
   val games = "games"
 
-  val featureColumns = Array("gender","age","country","friend_count","lifetime","game1","game2","game3","game4","paid_customer","country_index")
 
   /**
     * convert creates a dataframe, removes unnecessary colums and converts the rest to right format.
@@ -105,7 +103,7 @@ class GamingProcessor() {
       )
 
     gamesTable.createOrReplaceTempView(games)
-//    gamesTable.printSchema()
+    //    gamesTable.printSchema()
     gamesTable
   }
 
@@ -147,6 +145,8 @@ class GamingProcessor() {
     * @return Dataframe
     */
   def featureAssembler(df: DataFrame): DataFrame = {
+    val featureColumns = Array("gender", "age", "friend_count", "lifetime",
+      "game1", "game2", "game3", "game4", "paid_customer", "country_index")
     val assembler = new VectorAssembler()
       .setInputCols(featureColumns)
       .setOutputCol("features")
@@ -183,7 +183,15 @@ class GamingProcessor() {
     * @return trained LogisticRegressionModel
     */
   def createModel(training: DataFrame, featuresCol: String, labelCol: String, predCol: String): LogisticRegressionModel = {
-    ???
+    val lr = new LogisticRegression()
+      .setMaxIter(5)
+      .setRegParam(0.3)
+      .setElasticNetParam(0.8)
+      .setFeaturesCol(featuresCol)
+      .setLabelCol(labelCol)
+      .setPredictionCol(predCol)
+
+    lr.fit(training)
   }
 
 
@@ -197,7 +205,8 @@ class GamingProcessor() {
     * @return DataFrame predicted scores (1.0 == yes, 0.0 == no)
     */
   def predict(model: LogisticRegressionModel, dataToPredict: DataFrame): DataFrame = {
-    ???
+    val predictions = model.transform(dataToPredict)
+    predictions.select("prediction")
   }
 
 }
