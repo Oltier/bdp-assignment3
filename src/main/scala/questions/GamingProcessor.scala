@@ -1,7 +1,8 @@
 package questions
 
 import org.apache.spark.ml.classification.LogisticRegressionModel
-import org.apache.spark.ml.feature.StringIndexer
+import org.apache.spark.ml.feature.{StandardScaler, StringIndexer, VectorAssembler}
+import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
@@ -46,6 +47,8 @@ class GamingProcessor() {
     .getOrCreate()
 
   val games = "games"
+
+  val featureColumns = Array("gender","age","country","friend_count","lifetime","game1","game2","game3","game4","paid_customer","country_index")
 
   /**
     * convert creates a dataframe, removes unnecessary colums and converts the rest to right format.
@@ -144,7 +147,11 @@ class GamingProcessor() {
     * @return Dataframe
     */
   def featureAssembler(df: DataFrame): DataFrame = {
-    ???
+    val assembler = new VectorAssembler()
+      .setInputCols(featureColumns)
+      .setOutputCol("features")
+
+    assembler.transform(df)
   }
 
   /**
@@ -156,7 +163,13 @@ class GamingProcessor() {
     * @return Dataframe
     */
   def scaler(df: DataFrame, outputColName: String): DataFrame = {
-    ???
+    val scaler = new StandardScaler()
+      .setInputCol("features")
+      .setOutputCol(outputColName)
+      .setWithMean(true)
+      .setWithStd(true)
+
+    scaler.fit(df).transform(df)
   }
 
   /**
